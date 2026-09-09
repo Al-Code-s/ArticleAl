@@ -1,0 +1,263 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #F8FAFC;
+  color: #0F172A;
+}
+
+code {
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, Monaco, 'Courier New', monospace;
+  background: #F1F5F9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* 自定义滚动条样式 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 5px;
+  transition: background 0.2s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Ant Design 全局样式覆盖 */
+.ant-layout {
+  background: #F8FAFC;
+}
+
+.ant-card {
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #E2E8F0;
+}
+
+.ant-card-head {
+  border-bottom: 1px solid #E2E8F0;
+  font-weight: 600;
+  color: #0F172A;
+}
+
+.ant-btn {
+  font-weight: 500;
+  box-shadow: none;
+  transition: all 0.2s ease;
+}
+
+.ant-btn-primary {
+  background: #38BDF8;
+  border-color: #38BDF8;
+}
+
+.ant-btn-primary:hover {
+  background: #0EA5E9 !important;
+  border-color: #0EA5E9 !important;
+}
+
+.ant-table {
+  background: #FFFFFF;
+}
+
+.ant-table-thead > tr > th {
+  background: #F8FAFC;
+  color: #64748B;
+  font-weight: 600;
+  border-bottom: 2px solid #E2E8F0;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: #F8FAFC !important;
+}
+
+.ant-input,
+.ant-input-number,
+.ant-select-selector,
+.ant-picker {
+  border-radius: 8px !important;
+  border-color: #E2E8F0 !important;
+  transition: all 0.2s ease;
+}
+
+.ant-input:focus,
+.ant-input-number:focus,
+.ant-select-focused .ant-select-selector,
+.ant-picker-focused {
+  border-color: #38BDF8 !important;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.1) !important;
+}
+
+.ant-tag {
+  border-radius: 6px;
+  font-weight: 500;
+  padding: 2px 10px;
+}
+
+.ant-modal-content {
+  border-radius: 12px;
+}
+
+.ant-tabs-tab {
+  font-weight: 500;
+  color: #64748B;
+  transition: all 0.2s ease;
+}
+
+.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #38BDF8 !important;
+  font-weight: 600;
+}
+
+.ant-tabs-ink-bar {
+  background: #38BDF8;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+}
+
+.ant-descriptions-item-label {
+  font-weight: 600;
+  color: #64748B;
+}
+
+.ant-descriptions-item-content {
+  color: #0F172A;
+}
+
+/* Markdown样式 */
+.markdown-content {
+  line-height: 1.8;
+  color: #334155;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  margin-top: 24px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  color: #0F172A;
+}
+
+.markdown-content p {
+  margin-bottom: 16px;
+}
+
+.markdown-content code {
+  background: #F1F5F9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  color: #0EA5E9;
+}
+
+.markdown-content pre {
+  background: #1E293B;
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.markdown-content pre code {
+  background: transparent;
+  color: #E2E8F0;
+  padding: 0;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin-bottom: 16px;
+  padding-left: 32px;
+}
+
+.markdown-content blockquote {
+  border-left: 4px solid #38BDF8;
+  padding-left: 16px;
+  margin: 16px 0;
+  color: #64748B;
+  font-style: italic;
+}
+
+.markdown-content a {
+  color: #38BDF8;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.markdown-content a:hover {
+  color: #0EA5E9;
+  text-decoration: underline;
+}
+
+/* 加载动画 */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .ant-layout-sider {
+    position: fixed !important;
+    left: 0;
+    top: 64px;
+    bottom: 0;
+    z-index: 100;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+  }
+}

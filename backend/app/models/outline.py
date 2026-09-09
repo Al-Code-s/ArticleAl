@@ -2,7 +2,7 @@
 大纲模型
 """
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, Text, JSON, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, JSON, ForeignKey
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -12,18 +12,14 @@ class Outline(Base):
     __tablename__ = "outlines"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, unique=True)
     title = Column(String(500), nullable=False)
-    word_count = Column(Integer, nullable=False)
-    structure = Column(JSON, nullable=False)  # 大纲结构
-    # structure格式示例:
-    # [
-    #   {"level": 1, "title": "摘要", "content": ""},
-    #   {"level": 1, "title": "引言", "content": ""},
-    #   {"level": 2, "title": "研究背景", "content": ""},
-    # ]
+    content = Column(JSON, nullable=False)  # 大纲内容 (从 structure 改为 content，与 schema 匹配)
+    version = Column(Integer, default=1)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # 关系
+    user = relationship("User", back_populates="outlines")
     project = relationship("Project", back_populates="outline")

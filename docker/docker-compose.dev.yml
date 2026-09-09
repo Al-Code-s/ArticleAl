@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  # PostgreSQL数据库
+  postgres:
+    image: postgres:16-alpine
+    container_name: articleai-postgres-dev
+    environment:
+      POSTGRES_DB: articleai_dev
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: dev_password
+    volumes:
+      - postgres-dev-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - articleai-dev-network
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: articleai-redis-dev
+    ports:
+      - "6379:6379"
+    networks:
+      - articleai-dev-network
+
+volumes:
+  postgres-dev-data:
+    driver: local
+
+networks:
+  articleai-dev-network:
+    driver: bridge

@@ -6,7 +6,7 @@ interface ExportButtonProps {
   documentTitle?: string;
 }
 
-export const ExportButton: React.FC<ExportButtonProps> = ({ documentId, documentTitle }) => {
+export const ExportButton: React.FC<ExportButtonProps> = ({ documentId }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 

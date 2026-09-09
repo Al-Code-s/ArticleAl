@@ -24,4 +24,5 @@ class User(Base):
     ai_configs = relationship("AiConfig", back_populates="user", cascade="all, delete-orphan")
     projects = relationship("Project", back_populates="user", cascade="all, delete-orphan")
     topics = relationship("Topic", back_populates="user", cascade="all, delete-orphan")
+    outlines = relationship("Outline", back_populates="user", cascade="all, delete-orphan")
     documents = relationship("Document", back_populates="user", cascade="all, delete-orphan")

@@ -8,6 +8,7 @@ from anthropic import AsyncAnthropic
 from openai import AsyncOpenAI
 
 from app.core.config import settings
+from app.services.ai_runtime import ActiveAIConfig, build_anthropic_client, build_openai_client
 
 
 class AIService:
@@ -36,7 +37,8 @@ class AIService:
         education_level: str,
         paper_type: str,
         keywords: Optional[List[str]] = None,
-        count: int = 3
+        count: int = 3,
+        ai_config: Optional[ActiveAIConfig] = None,
     ) -> List[Dict[str, Any]]:
         """
         生成论文选题
@@ -71,8 +73,14 @@ class AIService:
   }}
 ]"""
 
-        # 使用 Claude
-        if self.anthropic_client:
+        if ai_config:
+            content = await self._generate_text(ai_config, prompt, 2000)
+            import json
+            import re
+            json_match = re.search(r'\[[\s\S]*\]', content)
+            if json_match:
+                return json.loads(json_match.group())
+        elif self.anthropic_client:
             response = await self.anthropic_client.messages.create(
                 model="claude-3-5-sonnet-20241022",
                 max_tokens=2000,
@@ -98,7 +106,8 @@ class AIService:
         major: str,
         education_level: str,
         paper_type: str,
-        requirements: Optional[str] = None
+        requirements: Optional[str] = None,
+        ai_config: Optional[ActiveAIConfig] = None,
     ) -> Dict[str, Any]:
         """
         生成论文大纲
@@ -149,8 +158,14 @@ class AIService:
   ]
 }}"""
 
-        # 使用 Claude
-        if self.anthropic_client:
+        if ai_config:
+            content = await self._generate_text(ai_config, prompt, 4000)
+            import json
+            import re
+            json_match = re.search(r'\{[\s\S]*\}', content)
+            if json_match:
+                return json.loads(json_match.group())
+        elif self.anthropic_client:
             response = await self.anthropic_client.messages.create(
                 model="claude-3-5-sonnet-20241022",
                 max_tokens=4000,
@@ -197,7 +212,8 @@ class AIService:
         topic_title: str,
         outline: Optional[Dict[str, Any]] = None,
         references: Optional[List[Dict[str, Any]]] = None,
-        requirements: Optional[str] = None
+        requirements: Optional[str] = None,
+        ai_config: Optional[ActiveAIConfig] = None,
     ) -> str:
         """
         生成文档内容
@@ -245,7 +261,8 @@ class AIService:
 
 请直接输出{doc_name}的完整内容。"""
 
-        # 使用 Claude
+        if ai_config:
+            return await self._generate_text(ai_config, prompt, 8000)
         if self.anthropic_client:
             response = await self.anthropic_client.messages.create(
                 model="claude-3-5-sonnet-20241022",
@@ -256,6 +273,40 @@ class AIService:
 
         # 返回模拟数据
         return self._generate_mock_document(doc_name, topic_title)
+
+    async def _generate_text(
+        self,
+        config: ActiveAIConfig,
+        prompt: str,
+        requested_max_tokens: int,
+        system: Optional[str] = None,
+    ) -> str:
+        max_tokens = min(config.max_tokens, requested_max_tokens)
+        if config.provider == "anthropic":
+            client = build_anthropic_client(config)
+            kwargs = {
+                "model": config.model,
+                "max_tokens": max_tokens,
+                "temperature": config.temperature,
+                "messages": [{"role": "user", "content": prompt}],
+            }
+            if system:
+                kwargs["system"] = system
+            response = await client.messages.create(**kwargs)
+            return response.content[0].text
+
+        client = build_openai_client(config)
+        messages = []
+        if system:
+            messages.append({"role": "system", "content": system})
+        messages.append({"role": "user", "content": prompt})
+        response = await client.chat.completions.create(
+            model=config.model,
+            max_tokens=max_tokens,
+            temperature=config.temperature,
+            messages=messages,
+        )
+        return response.choices[0].message.content or ""
 
     def _format_outline(self, outline: Dict[str, Any]) -> str:
         """格式化大纲为文本"""

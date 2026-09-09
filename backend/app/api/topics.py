@@ -18,6 +18,7 @@ from app.schemas.topic import (
     TopicGenerateRequest,
 )
 from app.services.ai_service import ai_service
+from app.services.ai_runtime import get_active_ai_config
 
 router = APIRouter()
 
@@ -34,12 +35,14 @@ async def generate_topics(
     根据专业、学历、论文类型生成候选题目
     """
     # 使用 AI 服务生成选题
+    ai_config = await get_active_ai_config(db, current_user.id, "content_generation")
     generated_topics = await ai_service.generate_topics(
         major=request.major,
         education_level=request.education_level,
         paper_type=request.paper_type,
         keywords=request.keywords,
-        count=request.count
+        count=request.count,
+        ai_config=ai_config,
     )
 
     # 保存生成的选题到数据库

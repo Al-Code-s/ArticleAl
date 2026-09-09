@@ -47,8 +47,8 @@ async def lifespan(app: FastAPI):
 # 创建FastAPI应用
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    description="AI论文写作系统API",
-    version="1.0.0",
+    description="AI论文写作系统API - AI provider configuration enabled",
+    version="1.1.0",
     lifespan=lifespan,
 )
 
@@ -56,6 +56,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.get_cors_origins(),
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -70,7 +71,7 @@ async def root():
     """根路径"""
     return {
         "message": "ArticleAI API",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "docs": "/docs",
     }
 

@@ -19,6 +19,7 @@ from app.schemas.document import (
     DocumentGenerateRequest,
 )
 from app.services.ai_service import ai_service
+from app.services.ai_runtime import get_active_ai_config
 
 router = APIRouter()
 
@@ -68,6 +69,7 @@ async def generate_document(
     references = references_result.scalars().all()
 
     # 使用 AI 服务生成文档内容
+    ai_config = await get_active_ai_config(db, current_user.id, "content_generation")
     document_content = await ai_service.generate_document(
         document_type=request.document_type.value,
         topic_title=project.title,
@@ -78,7 +80,8 @@ async def generate_document(
             "year": ref.year,
             "publication": ref.publication
         } for ref in references],
-        requirements=request.requirements
+        requirements=request.requirements,
+        ai_config=ai_config,
     )
 
     document_titles = {

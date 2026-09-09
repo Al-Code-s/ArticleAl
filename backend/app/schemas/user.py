@@ -46,3 +46,15 @@ class LoginRequest(BaseModel):
     """登录请求Schema"""
     username: str
     password: str
+
+
+class UserProfileUpdate(BaseModel):
+    """用户资料更新Schema"""
+    username: Optional[str] = Field(None, min_length=3, max_length=50)
+    email: Optional[EmailStr] = None
+
+
+class PasswordChangeRequest(BaseModel):
+    """修改密码请求Schema"""
+    old_password: str
+    new_password: str = Field(..., min_length=6, max_length=100)

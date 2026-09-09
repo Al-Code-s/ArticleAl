@@ -13,8 +13,9 @@ class AiConfig(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    config_type = Column(String(50), nullable=False)  # content_generation（内容生成） 或 agent（智能体）
     name = Column(String(100), nullable=False)
-    provider = Column(String(50), nullable=False)  # claude, openai, custom
+    provider = Column(String(50), nullable=False)  # anthropic, openai, custom
     model_name = Column(String(100), nullable=False)
     api_key = Column(Text, nullable=False)  # 加密存储
     api_base_url = Column(String(255), nullable=True)

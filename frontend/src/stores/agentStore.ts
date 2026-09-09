@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { AgentMessage, AgentStatus } from '@types/agent';
+import type { AgentMessage, AgentStatus } from '../types/agent';
 
 interface AgentState {
   messages: Record<string, AgentMessage[]>; // projectId -> messages

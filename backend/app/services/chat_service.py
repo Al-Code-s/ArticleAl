@@ -11,6 +11,7 @@ from app.models.project import Project
 from app.models.topic import Topic
 from app.models.outline import Outline
 from app.services.ai_service import ai_service
+from app.services.ai_runtime import get_active_ai_config
 
 
 class ChatService:
@@ -50,7 +51,15 @@ class ChatService:
 
         # 调用 AI 服务
         try:
-            if settings.ANTHROPIC_API_KEY and settings.ANTHROPIC_API_KEY != "your-anthropic-api-key":
+            active_config = await get_active_ai_config(db, user_id, "agent")
+            if active_config:
+                ai_response = await ai_service._generate_text(
+                    active_config,
+                    message,
+                    2000,
+                    system=full_context,
+                )
+            elif settings.ANTHROPIC_API_KEY and settings.ANTHROPIC_API_KEY != "your-anthropic-api-key":
                 from anthropic import AsyncAnthropic
                 client = AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
 

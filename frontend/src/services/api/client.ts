@@ -30,11 +30,12 @@ apiClient.interceptors.response.use(
     return response.data;
   },
   (error) => {
-    if (error.response?.status === 401) {
+    // 只在非登录页面处理401错误
+    if (error.response?.status === 401 && !window.location.pathname.includes('/login')) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
-    return Promise.reject(error.response?.data || error.message);
+    return Promise.reject(error);
   },
 );
 

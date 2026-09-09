@@ -19,6 +19,7 @@ from app.schemas.outline import (
     OutlineGenerateRequest,
 )
 from app.services.ai_service import ai_service
+from app.services.ai_runtime import get_active_ai_config
 
 router = APIRouter()
 
@@ -50,12 +51,14 @@ async def generate_outline(
         )
 
     # 使用 AI 服务生成大纲
+    ai_config = await get_active_ai_config(db, current_user.id, "content_generation")
     outline_content = await ai_service.generate_outline(
         topic_title=request.topic_title,
         major=project.major,
         education_level=project.education_level,
         paper_type=project.paper_type,
-        requirements=request.requirements
+        requirements=request.requirements,
+        ai_config=ai_config,
     )
 
     # 创建大纲
