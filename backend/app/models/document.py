@@ -2,7 +2,7 @@
 文档模型（任务书、开题报告、文献综述、论文正文）
 """
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, Text, JSON, ForeignKey, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 import enum
@@ -30,8 +30,9 @@ class Document(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
-    type = Column(SQLEnum(DocumentType), nullable=False)  # 修改为 type
-    status = Column(SQLEnum(DocumentStatus), default=DocumentStatus.DRAFT)  # 添加状态
+    # String columns keep compatibility with databases created before the enum migration.
+    type = Column(String(50), nullable=False)
+    status = Column(String(50), default=DocumentStatus.DRAFT.value)
     title = Column(String(500), nullable=False)
     content = Column(Text)  # Markdown或纯文本内容
     word_count = Column(Integer, default=0)  # 字数统计

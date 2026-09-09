@@ -1,10 +1,11 @@
-import { Outlet } from 'react-router-dom';
+import KeepAliveOutlet from './KeepAliveOutlet';
 import { Layout, Menu, Avatar, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   BulbOutlined,
   ProjectOutlined,
   SettingOutlined,
+  BookOutlined,
   UserOutlined,
   LogoutOutlined,
 } from '@ant-design/icons';
@@ -20,6 +21,11 @@ const MainLayout = () => {
   const { user, logout } = useUserStore();
 
   const menuItems = [
+    {
+      key: '/skills',
+      icon: <BookOutlined />,
+      label: '我的 Skills',
+    },
     {
       key: '/topics',
       icon: <BulbOutlined />,
@@ -83,7 +89,7 @@ const MainLayout = () => {
           />
         </Sider>
         <Content className="main-content">
-          <Outlet />
+          <KeepAliveOutlet />
         </Content>
       </Layout>
     </Layout>

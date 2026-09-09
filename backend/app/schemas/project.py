@@ -14,6 +14,7 @@ class ProjectBase(BaseModel):
     major: str = Field(..., max_length=100)
     education_level: str = Field(..., max_length=50)
     paper_type: str = Field(..., max_length=50)
+    word_count: int = Field(10000, ge=3000, le=50000)
 
 
 class ProjectCreate(ProjectBase):
@@ -26,6 +27,7 @@ class ProjectUpdate(BaseModel):
     title: Optional[str] = Field(None, max_length=500)
     description: Optional[str] = None
     status: Optional[ProjectStatus] = None
+    word_count: Optional[int] = Field(None, ge=3000, le=50000)
 
 
 class ProjectResponse(ProjectBase):

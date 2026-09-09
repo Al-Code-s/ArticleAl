@@ -17,4 +17,5 @@ export interface GenerateTopicDto {
   educationLevel: string;
   paperType: string;
   count?: number;
+  keywords?: string[];
 }

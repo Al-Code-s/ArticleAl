@@ -35,6 +35,7 @@ class Project(Base):
     major = Column(String(100), nullable=False)
     education_level = Column(String(50), nullable=False)
     paper_type = Column(String(50), nullable=False)
+    word_count = Column(Integer, nullable=False, default=10000)
     status = Column(SQLEnum(ProjectStatus), default=ProjectStatus.CREATED)
 
     # 智能体相关

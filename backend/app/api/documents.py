@@ -19,6 +19,7 @@ from app.schemas.document import (
     DocumentGenerateRequest,
 )
 from app.services.ai_service import ai_service
+from app.services.skill_service import resolve_skill, with_context
 from app.services.ai_runtime import get_active_ai_config
 
 router = APIRouter()
@@ -70,6 +71,11 @@ async def generate_document(
 
     # 使用 AI 服务生成文档内容
     ai_config = await get_active_ai_config(db, current_user.id, "content_generation")
+    skill_instructions = with_context(await resolve_skill(db, current_user.id, request.document_type.value), {
+        "文档类型": request.document_type.value, "论文标题": project.title,
+        "项目专业": project.major, "学历层次": project.education_level,
+        "论文类型": project.paper_type, "额外要求": request.requirements,
+    })
     document_content = await ai_service.generate_document(
         document_type=request.document_type.value,
         topic_title=project.title,
@@ -82,6 +88,7 @@ async def generate_document(
         } for ref in references],
         requirements=request.requirements,
         ai_config=ai_config,
+        skill_instructions=skill_instructions,
     )
 
     document_titles = {

@@ -34,9 +34,10 @@ async def search_references(
     通过知网或其他学术数据库搜索文献
     """
     # 使用 AI 服务搜索文献
+    keyword = request.keyword or " ".join(request.keywords)
     references_data = await ai_service.search_references(
-        keyword=request.keyword,
-        max_results=request.max_results
+        keyword=keyword,
+        max_results=request.max_results or request.limit
     )
 
     # 如果提供了project_id，保存到数据库

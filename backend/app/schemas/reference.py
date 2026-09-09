@@ -3,7 +3,8 @@
 """
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+import json
 
 
 class ReferenceBase(BaseModel):
@@ -19,6 +20,17 @@ class ReferenceBase(BaseModel):
     url: Optional[str] = None
     abstract: Optional[str] = None
     keywords: Optional[List[str]] = None
+
+    @field_validator("authors", "keywords", mode="before")
+    @classmethod
+    def parse_json_list(cls, value):
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+                return parsed if isinstance(parsed, list) else [value]
+            except json.JSONDecodeError:
+                return [value]
+        return value
 
 
 class ReferenceCreate(ReferenceBase):
@@ -50,6 +62,8 @@ class ReferenceResponse(ReferenceBase):
 class ReferenceSearchRequest(BaseModel):
     """参考文献搜索请求Schema"""
     keywords: List[str] = Field(..., min_items=1, description="搜索关键词")
+    keyword: Optional[str] = None
+    max_results: Optional[int] = Field(None, ge=1, le=100)
     limit: int = Field(20, ge=1, le=100, description="返回数量")
     year_from: Optional[int] = Field(None, description="起始年份")
     year_to: Optional[int] = Field(None, description="结束年份")
@@ -59,3 +73,5 @@ class ReferenceListResponse(BaseModel):
     """参考文献列表响应Schema"""
     items: List[ReferenceResponse]
     total: int
+    page: int = 1
+    page_size: int = 20

@@ -12,6 +12,7 @@ class Reference(Base):
     __tablename__ = "references"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
     project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     title = Column(Text, nullable=False)
     authors = Column(Text, nullable=False)  # JSON array

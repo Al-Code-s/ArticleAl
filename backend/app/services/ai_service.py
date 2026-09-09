@@ -8,6 +8,7 @@ from anthropic import AsyncAnthropic
 from openai import AsyncOpenAI
 
 from app.core.config import settings
+from app.skills import get_skill
 from app.services.ai_runtime import ActiveAIConfig, build_anthropic_client, build_openai_client
 
 
@@ -39,6 +40,7 @@ class AIService:
         keywords: Optional[List[str]] = None,
         count: int = 3,
         ai_config: Optional[ActiveAIConfig] = None,
+        skill_instructions: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
         生成论文选题
@@ -56,25 +58,20 @@ class AIService:
         keywords_str = "、".join(keywords) if keywords else ""
         keyword_prompt = f"，关键词包括：{keywords_str}" if keywords_str else ""
 
-        prompt = f"""你是一位资深的学术导师，请为{education_level}的{major}专业学生生成{count}个{paper_type}选题{keyword_prompt}。
-
-要求：
-1. 选题要具有创新性和可行性
-2. 难度适合{education_level}层次
-3. 每个选题包含：标题、描述、关键词
-4. 描述要简明扼要，说明研究价值
+        system = skill_instructions or get_skill("topics").instructions
+        prompt = f"""生成{count}个选题。学历：{education_level}；专业：{major}；论文类型：{paper_type}{keyword_prompt}。
 
 请以JSON格式返回，格式如下：
 [
   {{
     "title": "选题标题",
-    "description": "选题描述（100-200字）",
+    "description": "研究背景、核心问题、研究价值与可行性（100-200字）",
     "keywords": ["关键词1", "关键词2", "关键词3"]
   }}
 ]"""
 
         if ai_config:
-            content = await self._generate_text(ai_config, prompt, 2000)
+            content = await self._generate_text(ai_config, prompt, 2000, system=system)
             import json
             import re
             json_match = re.search(r'\[[\s\S]*\]', content)
@@ -84,6 +81,7 @@ class AIService:
             response = await self.anthropic_client.messages.create(
                 model="claude-3-5-sonnet-20241022",
                 max_tokens=2000,
+                system=system,
                 messages=[{"role": "user", "content": prompt}]
             )
             content = response.content[0].text
@@ -108,6 +106,7 @@ class AIService:
         paper_type: str,
         requirements: Optional[str] = None,
         ai_config: Optional[ActiveAIConfig] = None,
+        skill_instructions: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         生成论文大纲
@@ -124,18 +123,12 @@ class AIService:
         """
         req_text = f"\n额外要求：{requirements}" if requirements else ""
 
-        prompt = f"""你是一位资深的学术导师，请为以下论文生成详细的大纲结构：
-
+        system = skill_instructions or get_skill("outline").instructions
+        prompt = f"""生成论文大纲。
 论文标题：{topic_title}
 专业：{major}
 学历层次：{education_level}
 论文类型：{paper_type}{req_text}
-
-要求：
-1. 大纲要完整、结构清晰
-2. 包含摘要、引言、文献综述、研究方法、研究结果、讨论、结论、参考文献等章节
-3. 每个一级章节下包含2-4个二级章节
-4. 适合{education_level}的研究深度
 
 请以JSON格式返回，格式如下：
 {{
@@ -159,7 +152,7 @@ class AIService:
 }}"""
 
         if ai_config:
-            content = await self._generate_text(ai_config, prompt, 4000)
+            content = await self._generate_text(ai_config, prompt, 4000, system=system)
             import json
             import re
             json_match = re.search(r'\{[\s\S]*\}', content)
@@ -169,6 +162,7 @@ class AIService:
             response = await self.anthropic_client.messages.create(
                 model="claude-3-5-sonnet-20241022",
                 max_tokens=4000,
+                system=system,
                 messages=[{"role": "user", "content": prompt}]
             )
             content = response.content[0].text
@@ -214,6 +208,7 @@ class AIService:
         references: Optional[List[Dict[str, Any]]] = None,
         requirements: Optional[str] = None,
         ai_config: Optional[ActiveAIConfig] = None,
+        skill_instructions: Optional[str] = None,
     ) -> str:
         """
         生成文档内容
@@ -248,25 +243,18 @@ class AIService:
                 for ref in references[:5]
             ])
 
-        prompt = f"""你是一位资深的学术写作专家，请为以下论文撰写{doc_name}：
-
+        system = skill_instructions or get_skill(document_type).instructions
+        prompt = f"""撰写{doc_name}。
 论文标题：{topic_title}{outline_text}{refs_text}{req_text}
-
-要求：
-1. 内容要专业、严谨
-2. 结构完整、逻辑清晰
-3. 字数适中（3000-5000字）
-4. 使用学术语言，避免口语化
-5. 以Markdown格式输出
-
-请直接输出{doc_name}的完整内容。"""
+请直接输出 Markdown 格式的完整内容；未指定篇幅时以3000–5000字为目标。"""
 
         if ai_config:
-            return await self._generate_text(ai_config, prompt, 8000)
+            return await self._generate_text(ai_config, prompt, 8000, system=system)
         if self.anthropic_client:
             response = await self.anthropic_client.messages.create(
                 model="claude-3-5-sonnet-20241022",
                 max_tokens=8000,
+                system=system,
                 messages=[{"role": "user", "content": prompt}]
             )
             return response.content[0].text

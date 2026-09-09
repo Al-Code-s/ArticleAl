@@ -13,6 +13,7 @@ class Topic(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="SET NULL"), nullable=True, index=True)
     title = Column(String(500), nullable=False)
     description = Column(Text)
     major = Column(String(100), nullable=False)  # 专业
@@ -22,6 +23,7 @@ class Topic(Base):
     difficulty = Column(String(20))  # easy, medium, hard
     feasibility_score = Column(Float, default=0.0)
     is_used = Column(Boolean, default=False)
+    is_selected = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

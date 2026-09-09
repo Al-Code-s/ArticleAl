@@ -4,6 +4,7 @@ import {
   Button,
   Form,
   Select,
+  AutoComplete,
   InputNumber,
   Table,
   Tag,
@@ -15,10 +16,13 @@ import {
 import { PlusOutlined, RocketOutlined } from '@ant-design/icons';
 import { useMutation } from '@tanstack/react-query';
 import { topicApi } from '@services/api/topic';
+import { projectApi } from '@services/api/project';
 import { useProjectStore } from '@stores/projectStore';
 import { useNavigate } from 'react-router-dom';
 import type { Topic } from '../../types/topic';
 import './TopicHall.css';
+import { EDUCATION_LEVELS, MAJORS, PAPER_TYPES } from '../../constants/academic';
+
 
 const TopicHall = () => {
   const [form] = Form.useForm();
@@ -33,12 +37,13 @@ const TopicHall = () => {
     mutationFn: topicApi.generateTopics,
     onSuccess: (res: any) => {
       // Backend returns array directly, axios interceptor already unwrapped response.data
-      const newTopics = Array.isArray(res) ? res : [];
+      const newTopics = Array.isArray(res) ? res : (res?.items || []);
       setTopics(newTopics);
       message.success(`成功生成 ${newTopics.length} 个题目`);
     },
-    onError: () => {
-      message.error('生成题目失败');
+    onError: (error: any) => {
+      const detail = error?.response?.data?.detail;
+      message.error(detail || '生成题目失败，请检查后端日志或 AI 配置');
     },
   });
 
@@ -156,99 +161,36 @@ const TopicHall = () => {
           form={form}
           layout="inline"
           onFinish={handleGenerate}
-          initialValues={{ count: 5, educationLevel: '本科', paperType: '毕业论文' }}
+          initialValues={{ count: 5, educationLevel: '本科', paperType: '研究性论文' }}
         >
           <Form.Item
             name="major"
             label="专业"
             rules={[{ required: true, message: '请输入专业' }]}
           >
-            <Select
+            <AutoComplete
               style={{ width: 200 }}
-              placeholder="选择专业"
-              showSearch
-              filterOption={(input, option) => {
-                const label = option?.label || option?.children;
-                return String(label).toLowerCase().includes(input.toLowerCase());
-              }}
-            >
-              <Select.Option value="计算机科学与技术">计算机科学与技术</Select.Option>
-              <Select.Option value="软件工程">软件工程</Select.Option>
-              <Select.Option value="人工智能">人工智能</Select.Option>
-              <Select.Option value="大数据技术">大数据技术</Select.Option>
-              <Select.Option value="网络工程">网络工程</Select.Option>
-              <Select.Option value="信息安全">信息安全</Select.Option>
-              <Select.Option value="物联网工程">物联网工程</Select.Option>
-              <Select.Option value="数字媒体技术">数字媒体技术</Select.Option>
-              <Select.Option value="电子信息工程">电子信息工程</Select.Option>
-              <Select.Option value="通信工程">通信工程</Select.Option>
-              <Select.Option value="自动化">自动化</Select.Option>
-              <Select.Option value="电气工程">电气工程</Select.Option>
-              <Select.Option value="机械工程">机械工程</Select.Option>
-              <Select.Option value="土木工程">土木工程</Select.Option>
-              <Select.Option value="建筑学">建筑学</Select.Option>
-              <Select.Option value="化学工程">化学工程</Select.Option>
-              <Select.Option value="材料科学与工程">材料科学与工程</Select.Option>
-              <Select.Option value="生物工程">生物工程</Select.Option>
-              <Select.Option value="环境工程">环境工程</Select.Option>
-              <Select.Option value="工商管理">工商管理</Select.Option>
-              <Select.Option value="市场营销">市场营销</Select.Option>
-              <Select.Option value="会计学">会计学</Select.Option>
-              <Select.Option value="财务管理">财务管理</Select.Option>
-              <Select.Option value="人力资源管理">人力资源管理</Select.Option>
-              <Select.Option value="金融学">金融学</Select.Option>
-              <Select.Option value="国际经济与贸易">国际经济与贸易</Select.Option>
-              <Select.Option value="经济学">经济学</Select.Option>
-              <Select.Option value="法学">法学</Select.Option>
-              <Select.Option value="社会学">社会学</Select.Option>
-              <Select.Option value="心理学">心理学</Select.Option>
-              <Select.Option value="教育学">教育学</Select.Option>
-              <Select.Option value="学前教育">学前教育</Select.Option>
-              <Select.Option value="汉语言文学">汉语言文学</Select.Option>
-              <Select.Option value="英语">英语</Select.Option>
-              <Select.Option value="新闻学">新闻学</Select.Option>
-              <Select.Option value="广告学">广告学</Select.Option>
-              <Select.Option value="历史学">历史学</Select.Option>
-              <Select.Option value="哲学">哲学</Select.Option>
-              <Select.Option value="数学与应用数学">数学与应用数学</Select.Option>
-              <Select.Option value="物理学">物理学</Select.Option>
-              <Select.Option value="化学">化学</Select.Option>
-              <Select.Option value="生物科学">生物科学</Select.Option>
-              <Select.Option value="地理科学">地理科学</Select.Option>
-              <Select.Option value="临床医学">临床医学</Select.Option>
-              <Select.Option value="护理学">护理学</Select.Option>
-              <Select.Option value="药学">药学</Select.Option>
-              <Select.Option value="中医学">中医学</Select.Option>
-              <Select.Option value="口腔医学">口腔医学</Select.Option>
-              <Select.Option value="公共事业管理">公共事业管理</Select.Option>
-              <Select.Option value="行政管理">行政管理</Select.Option>
-              <Select.Option value="旅游管理">旅游管理</Select.Option>
-              <Select.Option value="酒店管理">酒店管理</Select.Option>
-              <Select.Option value="农学">农学</Select.Option>
-              <Select.Option value="园艺">园艺</Select.Option>
-              <Select.Option value="动物医学">动物医学</Select.Option>
-              <Select.Option value="林学">林学</Select.Option>
-              <Select.Option value="艺术设计">艺术设计</Select.Option>
-              <Select.Option value="音乐学">音乐学</Select.Option>
-              <Select.Option value="美术学">美术学</Select.Option>
-              <Select.Option value="舞蹈学">舞蹈学</Select.Option>
-              <Select.Option value="体育教育">体育教育</Select.Option>
-            </Select>
+              placeholder="请选择或输入专业"
+              options={MAJORS.map((major) => ({ value: major, label: major }))}
+              filterOption={(input, option) => String(option?.label || '').toLowerCase().includes(input.toLowerCase())}
+            />
           </Form.Item>
 
           <Form.Item name="educationLevel" label="学历">
             <Select style={{ width: 120 }}>
-              <Select.Option value="专科">专科</Select.Option>
-              <Select.Option value="本科">本科</Select.Option>
-              <Select.Option value="硕士">硕士</Select.Option>
+              {EDUCATION_LEVELS.map((level) => (
+                <Select.Option key={level} value={level}>{level}</Select.Option>
+              ))}
             </Select>
           </Form.Item>
 
-          <Form.Item name="paperType" label="类型">
-            <Select style={{ width: 120 }}>
-              <Select.Option value="毕业论文">毕业论文</Select.Option>
-              <Select.Option value="学术论文">学术论文</Select.Option>
-              <Select.Option value="研究报告">研究报告</Select.Option>
+          <Form.Item name="paperType" label="论文类型">
+            <Select style={{ width: 180 }}>
+              {PAPER_TYPES.map((type) => (
+                <Select.Option key={type.value} value={type.value}>
+                  <div>{type.value}<div style={{ fontSize: 12, color: '#999' }}>{type.help}</div></div>
+                </Select.Option>
+              ))}
             </Select>
           </Form.Item>
 

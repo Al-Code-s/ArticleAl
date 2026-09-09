@@ -2,6 +2,7 @@
 API路由汇总
 """
 from fastapi import APIRouter
+from app.api import skills
 from app.api import auth, users, projects, topics, outlines, references, documents, chat, export, ai_configs, agents
 
 api_router = APIRouter()
@@ -18,6 +19,8 @@ api_router.include_router(chat.router, prefix="/chat", tags=["聊天"])
 api_router.include_router(export.router, prefix="/export", tags=["导出"])
 api_router.include_router(ai_configs.router, prefix="/ai-configs", tags=["AI配置"])
 api_router.include_router(agents.router, prefix="/agents", tags=["智能体"])
+
+api_router.include_router(skills.router, prefix="/skills", tags=["Skills"])
 
 # 健康检查
 @api_router.get("/health", tags=["系统"])

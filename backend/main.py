@@ -20,6 +20,29 @@ async def init_db():
         try:
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
+                # 兼容已有开发数据库：create_all 不会为旧表补充新列
+                if settings.DATABASE_URL.startswith("postgresql"):
+                    from sqlalchemy import text
+                    await conn.execute(text("ALTER TABLE topics ADD COLUMN IF NOT EXISTS project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL"))
+                    await conn.execute(text("ALTER TABLE topics ADD COLUMN IF NOT EXISTS is_selected BOOLEAN DEFAULT FALSE"))
+                    await conn.execute(text("ALTER TABLE \"references\" ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE"))
+                    await conn.execute(text("UPDATE \"references\" r SET user_id = p.user_id FROM projects p WHERE r.project_id = p.id AND r.user_id IS NULL"))
+                    await conn.execute(text("ALTER TABLE projects ADD COLUMN IF NOT EXISTS word_count INTEGER NOT NULL DEFAULT 10000"))
+                    # 兼容早期数据库表结构，补充当前 ORM/接口使用的字段
+                    await conn.execute(text("ALTER TABLE outlines ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE"))
+                    await conn.execute(text("ALTER TABLE outlines ADD COLUMN IF NOT EXISTS content JSON"))
+                    await conn.execute(text("ALTER TABLE outlines ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 1"))
+                    await conn.execute(text("UPDATE outlines o SET user_id = p.user_id FROM projects p WHERE o.project_id = p.id AND o.user_id IS NULL"))
+                    await conn.execute(text("UPDATE outlines SET content = structure WHERE content IS NULL AND structure IS NOT NULL"))
+                    await conn.execute(text("ALTER TABLE documents ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE"))
+                    await conn.execute(text("ALTER TABLE documents ADD COLUMN IF NOT EXISTS type VARCHAR(50)"))
+                    await conn.execute(text("ALTER TABLE documents ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'DRAFT'"))
+                    await conn.execute(text("ALTER TABLE documents ADD COLUMN IF NOT EXISTS word_count INTEGER NOT NULL DEFAULT 0"))
+                    await conn.execute(text("ALTER TABLE documents ADD COLUMN IF NOT EXISTS content TEXT"))
+                    await conn.execute(text("ALTER TABLE documents ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 1"))
+                    await conn.execute(text("UPDATE documents d SET user_id = p.user_id FROM projects p WHERE d.project_id = p.id AND d.user_id IS NULL"))
+                    await conn.execute(text("UPDATE documents SET type = doc_type WHERE type IS NULL AND doc_type IS NOT NULL"))
+                    await conn.execute(text("UPDATE documents SET content = structured_content::text WHERE content IS NULL AND structured_content IS NOT NULL"))
             print("Database connected successfully, tables created")
             return
         except Exception as e:

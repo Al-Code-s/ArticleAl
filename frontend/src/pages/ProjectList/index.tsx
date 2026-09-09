@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, Table, Button, Space, Tag, Modal, Form, Input, InputNumber, message } from 'antd';
+import { Card, Table, Button, Space, Tag, Modal, Form, Input, InputNumber, Select, message } from 'antd';
 import { PlusOutlined, FolderOpenOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectApi } from '@services/api/project';
@@ -7,6 +7,7 @@ import { useProjectStore } from '@stores/projectStore';
 import { useNavigate } from 'react-router-dom';
 import type { Project } from '../../types/project';
 import './ProjectList.css';
+import { EDUCATION_LEVELS, MAJORS, PAPER_TYPES } from '../../constants/academic';
 
 const ProjectList = () => {
   const navigate = useNavigate();
@@ -108,6 +109,7 @@ const ProjectList = () => {
       dataIndex: 'word_count',
       key: 'word_count',
       width: '10%',
+      render: (count: number) => count ? `${count.toLocaleString()} 字` : '-',
     },
     {
       title: '创建时间',
@@ -192,16 +194,22 @@ const ProjectList = () => {
             <Input placeholder="请输入项目名称" />
           </Form.Item>
 
-          <Form.Item name="major" label="专业">
-            <Input placeholder="例如：计算机科学与技术" />
+          <Form.Item name="major" label="专业" rules={[{ required: true, message: '请选择专业' }]}>
+            <Select showSearch placeholder="请选择专业" optionFilterProp="label" options={MAJORS.map((major) => ({ value: major, label: major }))} />
           </Form.Item>
 
-          <Form.Item name="education_level" label="学历">
-            <Input placeholder="例如：本科" />
+          <Form.Item name="education_level" label="学历" rules={[{ required: true, message: '请选择学历' }]}>
+            <Select placeholder="请选择学历" options={EDUCATION_LEVELS.map((level) => ({ value: level, label: level }))} />
           </Form.Item>
 
-          <Form.Item name="paper_type" label="论文类型">
-            <Input placeholder="例如：毕业论文" />
+          <Form.Item name="paper_type" label="论文类型" rules={[{ required: true, message: '请选择论文类型' }]}>
+            <Select placeholder="请选择论文类型" optionLabelProp="label">
+              {PAPER_TYPES.map((type) => (
+                <Select.Option key={type.value} value={type.value} label={type.value}>
+                  <div>{type.value}<div style={{ fontSize: 12, color: '#999' }}>{type.help}</div></div>
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
 
           <Form.Item

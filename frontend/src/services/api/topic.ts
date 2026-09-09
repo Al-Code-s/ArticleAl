@@ -4,7 +4,11 @@ import type { Topic, GenerateTopicDto } from '../../types/topic';
 export const topicApi = {
   // 生成题目
   generateTopics: (data: GenerateTopicDto) =>
-    apiClient.post<Topic[]>('/topics/generate', data),
+    apiClient.post<Topic[]>('/topics/generate', {
+      ...data,
+      education_level: data.educationLevel,
+      paper_type: data.paperType,
+    }),
 
   // 获取我的题目列表
   getTopics: (projectId?: number) =>

@@ -11,6 +11,7 @@ from app.models.project import Project
 from app.models.topic import Topic
 from app.models.outline import Outline
 from app.services.ai_service import ai_service
+from app.services.skill_service import resolve_skill, with_context
 from app.services.ai_runtime import get_active_ai_config
 
 
@@ -39,7 +40,10 @@ class ChatService:
             包含 AI 回复的字典
         """
         # 构建系统提示
-        system_prompt = self._build_system_prompt(context)
+        system_prompt = with_context(await resolve_skill(db, user_id, "chat"), {
+            "项目ID": project_id, "用户消息": message, "上下文": context,
+        })
+        system_prompt += "\n\n" + self._build_system_prompt(context)
 
         # 如果有项目ID，获取项目相关信息
         project_context = ""

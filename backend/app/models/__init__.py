@@ -33,3 +33,5 @@ __all__ = [
     "ExportFormat",
     "ExportStatus",
 ]
+
+from app.models.skill import SkillOverride

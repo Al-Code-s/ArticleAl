@@ -4,7 +4,7 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, text
 
 from app.core.database import get_db
 from app.core.security import get_current_user
@@ -34,6 +34,7 @@ async def create_project(
         major=project_data.major,
         education_level=project_data.education_level,
         paper_type=project_data.paper_type,
+        word_count=project_data.word_count,
     )
     db.add(new_project)
     await db.commit()
@@ -151,6 +152,18 @@ async def delete_project(
             detail="Project not found"
         )
 
-    await db.delete(project)
+    # Explicitly remove children so old databases do not trigger ORM relationship
+    # loads against columns that were added in newer model versions.
+    params = {"project_id": project_id}
+    for table in ("topics", "outlines", "documents", "paper_sections", "export_records"):
+        await db.execute(text(f"DELETE FROM {table} WHERE project_id = :project_id"), params)
+    await db.execute(text('DELETE FROM "references" WHERE project_id = :project_id'), params)
+    # Agent messages reference sessions, so remove them before their session.
+    await db.execute(text("DELETE FROM agent_messages WHERE session_id IN (SELECT id FROM agent_sessions WHERE project_id = :project_id)"), params)
+    await db.execute(text("DELETE FROM agent_sessions WHERE project_id = :project_id"), params)
+    await db.execute(text("DELETE FROM projects WHERE id = :project_id AND user_id = :user_id"), {
+        "project_id": project_id,
+        "user_id": current_user.id,
+    })
     await db.commit()
     return None

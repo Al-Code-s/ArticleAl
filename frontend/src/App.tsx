@@ -5,6 +5,7 @@ import TopicHall from '@pages/TopicHall';
 import ProjectList from '@pages/ProjectList';
 import ProjectWorkspace from '@pages/ProjectWorkspace';
 import Settings from '@pages/Settings';
+import Skills from '@pages/Skills';
 import Login from '@pages/Login';
 import Register from '@pages/Register';
 
@@ -29,6 +30,7 @@ function App() {
         <Route path="projects" element={<ProjectList />} />
         <Route path="projects/:projectId" element={<ProjectWorkspace />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="skills" element={<Skills />} />
       </Route>
 
       {/* 404 */}
