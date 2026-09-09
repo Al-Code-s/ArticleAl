@@ -15,3 +15,20 @@
 .project-workspace .ant-tabs-content {
   min-height: 400px;
 }
+
+.agent-drawer {
+  position: fixed;
+  z-index: 20;
+  right: 24px;
+  bottom: 24px;
+  width: min(380px, calc(100vw - 32px));
+  height: 480px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.16);
+}
+.agent-drawer-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.agent-drawer .chat-panel { height: 420px !important; }
+.agent-expand-button { position: fixed; right: 24px; bottom: 24px; z-index: 19; border-radius: 20px; }

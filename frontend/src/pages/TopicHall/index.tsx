@@ -14,7 +14,7 @@ import {
   Spin,
 } from 'antd';
 import { PlusOutlined, RocketOutlined } from '@ant-design/icons';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { topicApi } from '@services/api/topic';
 import { projectApi } from '@services/api/project';
 import { useProjectStore } from '@stores/projectStore';
@@ -28,6 +28,7 @@ const TopicHall = () => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const { addProject, setActiveProject } = useProjectStore();
+  const queryClient = useQueryClient();
   const [topics, setTopics] = useState<Topic[]>([]);
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
   const [createModalVisible, setCreateModalVisible] = useState(false);
@@ -60,6 +61,17 @@ const TopicHall = () => {
     onSuccess: (res: any) => {
       // Backend returns project object directly
       addProject(res);
+      // ProjectList is kept alive, so explicitly refresh its cached query after
+      // creating a project from the topic hall.
+      queryClient.setQueryData(['projects'], (current: any) => {
+        const items = current?.items || [];
+        return {
+          ...(current || {}),
+          items: [res, ...items.filter((item: any) => item.id !== res.id)],
+          total: Math.max(current?.total || 0, items.length + 1),
+        };
+      });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
       setActiveProject(res.id);
       message.success('项目创建成功！');
       setCreateModalVisible(false);

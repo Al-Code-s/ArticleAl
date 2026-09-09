@@ -61,7 +61,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ messages: [...messages, userMessage], isLoading: true });
 
     try {
-      chatWebSocket.sendMessage(content);
+      chatWebSocket.sendMessage(content, get().currentProjectId);
     } catch (error) {
       console.error('Failed to send message:', error);
       set({ isLoading: false });

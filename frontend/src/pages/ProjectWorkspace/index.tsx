@@ -30,8 +30,9 @@ import './ProjectWorkspace.css';
 const ProjectWorkspace = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const { projects, setActiveProject, updateProject } = useProjectStore();
-  const [activeTab, setActiveTab] = useState('chat');
+  const [activeTab, setActiveTab] = useState('outline');
   const [outlineModalVisible, setOutlineModalVisible] = useState(false);
+  const [agentOpen, setAgentOpen] = useState(false);
 
   const currentProject = projects.find((p) => p.id === projectId);
 
@@ -61,6 +62,7 @@ const ProjectWorkspace = () => {
     mutationFn: (projectId: string) => agentApi.startAgent(projectId),
     onSuccess: () => {
       message.success('智能体已启动');
+      setAgentOpen(true);
       if (projectId) {
         updateProject(projectId, { agent_status: 'running' });
       }
@@ -75,6 +77,7 @@ const ProjectWorkspace = () => {
     mutationFn: (projectId: string) => agentApi.stopAgent(projectId),
     onSuccess: () => {
       message.success('智能体已停止');
+      setAgentOpen(false);
       if (projectId) {
         updateProject(projectId, { agent_status: 'stopped' });
       }
@@ -231,20 +234,6 @@ const ProjectWorkspace = () => {
           onChange={setActiveTab}
           items={[
             {
-              key: 'chat',
-              label: (
-                <span>
-                  <RocketOutlined />
-                  智能体对话
-                </span>
-              ),
-              children: (
-                <div style={{ padding: '16px 0' }}>
-                  <ChatPanel projectId={parseInt(projectId)} />
-                </div>
-              ),
-            },
-            {
               key: 'outline',
               label: (
                 <span>
@@ -318,6 +307,21 @@ const ProjectWorkspace = () => {
           ]}
         />
       </Card>
+
+      {project.agent_status === 'running' && agentOpen && (
+        <div className="agent-drawer">
+          <div className="agent-drawer-header">
+            <b>项目智能体</b>
+            <Button size="small" onClick={() => setAgentOpen(false)}>收起</Button>
+          </div>
+          <ChatPanel projectId={parseInt(projectId)} />
+        </div>
+      )}
+      {project.agent_status === 'running' && !agentOpen && (
+        <Button className="agent-expand-button" type="primary" onClick={() => setAgentOpen(true)}>
+          展开智能体
+        </Button>
+      )}
 
       <Modal
         title="生成大纲"

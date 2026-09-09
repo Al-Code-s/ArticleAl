@@ -64,9 +64,10 @@ class ChatWebSocket {
     }
   }
 
-  sendMessage(message: string) {
+  sendMessage(message: string, projectId?: number) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify({ message }));
+      // Backend expects the same envelope used by its WebSocket protocol.
+      this.ws.send(JSON.stringify({ type: 'message', content: message, project_id: projectId, context: {} }));
     } else {
       console.error('WebSocket is not connected');
       throw new Error('WebSocket is not connected');
