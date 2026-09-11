@@ -56,6 +56,7 @@ async def generate_outline(
     skill_instructions = with_context(await resolve_skill(db, current_user.id, "outline"), {
         "论文标题": request.topic_title, "专业": project.major,
         "学历层次": project.education_level, "论文类型": project.paper_type,
+        "目标字数": project.word_count,
         "额外要求": request.requirements,
     })
     outline_content = await ai_service.generate_outline(
@@ -63,21 +64,37 @@ async def generate_outline(
         major=project.major,
         education_level=project.education_level,
         paper_type=project.paper_type,
+        word_count=project.word_count,
         requirements=request.requirements,
         ai_config=ai_config,
         skill_instructions=skill_instructions,
     )
 
-    # 创建大纲
-    new_outline = Outline(
-        user_id=current_user.id,
-        project_id=request.project_id,
-        title=request.topic_title,
-        content=outline_content,
-        version=1
+    # 项目每次只保留一份大纲；重新生成时更新并递增版本，避免唯一约束冲突
+    existing_result = await db.execute(
+        select(Outline).where(
+            Outline.project_id == request.project_id,
+            Outline.user_id == current_user.id,
+        )
     )
-
-    db.add(new_outline)
+    new_outline = existing_result.scalar_one_or_none()
+    if new_outline:
+        new_outline.title = request.topic_title
+        new_outline.content = outline_content
+        new_outline.structure = outline_content
+        new_outline.word_count = len(str(outline_content))
+        new_outline.version = (new_outline.version or 0) + 1
+    else:
+        new_outline = Outline(
+            user_id=current_user.id,
+            project_id=request.project_id,
+            title=request.topic_title,
+            content=outline_content,
+            structure=outline_content,
+            word_count=len(str(outline_content)),
+            version=1
+        )
+        db.add(new_outline)
     await db.commit()
     await db.refresh(new_outline)
 

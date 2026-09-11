@@ -19,6 +19,15 @@ class AiConfigCreate(BaseModel):
     streamEnabled: bool = True
     activate: bool = True
 
+class AiConfigUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    provider: Optional[str] = Field(None, min_length=1, max_length=50)
+    model: Optional[str] = Field(None, min_length=1, max_length=100)
+    apiKey: Optional[str] = None
+    baseUrl: Optional[str] = None
+    temperature: Optional[float] = Field(None, ge=0, le=2)
+    maxTokens: Optional[int] = Field(None, ge=1)
+
 
 class AiConfigResponse(BaseModel):
     """AI配置响应Schema（不包含api_key）"""

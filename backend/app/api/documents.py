@@ -84,8 +84,14 @@ async def generate_document(
             "title": ref.title,
             "authors": ref.authors,
             "year": ref.year,
-            "publication": ref.publication
-        } for ref in references],
+            "journal": ref.journal,
+            "abstract": ref.abstract,
+            "doi": ref.doi,
+            "url": ref.url or ref.cnki_url,
+            "volume": ref.volume,
+            "issue": ref.issue,
+            "pages": ref.pages
+        } for ref in references] if request.document_type.value in {"literature_review", "thesis"} else None,
         requirements=request.requirements,
         ai_config=ai_config,
         skill_instructions=skill_instructions,

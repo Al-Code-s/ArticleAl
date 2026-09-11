@@ -27,8 +27,8 @@ export const projectApi = {
     apiClient.get(`/outlines`, { params: { project_id: projectId, page: 1, page_size: 1 } }),
 
   // 生成大纲
-  generateOutline: (projectId: string, title: string) =>
-    apiClient.post(`/outlines/generate`, { project_id: parseInt(projectId), topic_title: title }),
+  generateOutline: (projectId: string, title: string, style: 'liberal' | 'science') =>
+    apiClient.post(`/outlines/generate`, { project_id: parseInt(projectId), topic_title: title, requirements: style }),
 
   // 更新大纲
   updateOutline: (outlineId: string, content: any) =>

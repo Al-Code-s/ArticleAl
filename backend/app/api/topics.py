@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 import json
+import re
 
 from app.core.database import get_db
 from app.core.security import get_current_user
@@ -57,16 +58,39 @@ async def generate_topics(
             request.major, request.education_level, request.paper_type, request.count
         )
 
-    # 保存生成的选题到数据库；对模型输出做容错，避免一条格式异常导致整批失败
+    # 保存生成的选题到数据库；对模型输出做容错，避免一条格式异常导致整批失败。
+    # AI 返回数量不足或返回占位标题时，用同样输入生成的本地候选补齐。
+    fallback_topics = ai_service._generate_mock_topics(
+        request.major, request.education_level, request.paper_type, request.count
+    )
+    candidate_topics = list(generated_topics) if isinstance(generated_topics, list) else []
+    candidate_topics.extend(fallback_topics)
     topics = []
-    for index, topic_data in enumerate(generated_topics):
+    seen_titles = set()
+    for topic_data in candidate_topics:
         if not isinstance(topic_data, dict):
             continue
-        title = str(topic_data.get("title") or f"{request.major}毕业论文选题（{index + 1}）").strip()
+        raw_title = topic_data.get("title")
+        if not isinstance(raw_title, str):
+            continue
+        title = raw_title.strip()
+        if not title:
+            continue
+        if (
+            re.fullmatch(r"基于.+的\d+号研究课题", title)
+            or re.fullmatch(r".+毕业论文选题[（(]\d+[）)]", title)
+        ):
+            continue
+        title_key = title[:500]
+        if title_key in seen_titles:
+            continue
+        seen_titles.add(title_key)
         description = str(topic_data.get("description") or "围绕该选题开展毕业论文研究。").strip()
         keywords = topic_data.get("keywords") or []
         if isinstance(keywords, str):
             keywords = [keywords]
+        if not isinstance(keywords, list):
+            keywords = []
         new_topic = Topic(
             user_id=current_user.id,
             project_id=request.project_id,
@@ -79,6 +103,8 @@ async def generate_topics(
         )
         db.add(new_topic)
         topics.append(new_topic)
+        if len(topics) >= request.count:
+            break
 
     if not topics:
         raise HTTPException(status_code=502, detail="AI 未返回有效的论文题目，请重试")

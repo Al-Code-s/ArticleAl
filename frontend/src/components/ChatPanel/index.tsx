@@ -45,7 +45,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ projectId }) => {
   };
 
   return (
-    <div style={{
+    <div className="chat-panel" style={{
       display: 'flex',
       flexDirection: 'column',
       height: '600px',

@@ -30,5 +30,6 @@
   box-shadow: 0 8px 30px rgba(0,0,0,.16);
 }
 .agent-drawer-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
-.agent-drawer .chat-panel { height: 420px !important; }
+.agent-drawer .chat-panel { height: 400px !important; min-height: 0; }
+.agent-drawer .chat-panel > div:last-child { min-height: 72px; }
 .agent-expand-button { position: fixed; right: 24px; bottom: 24px; z-index: 19; border-radius: 20px; }

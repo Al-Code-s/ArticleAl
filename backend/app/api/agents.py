@@ -104,6 +104,12 @@ async def stop_agent(
             from datetime import datetime
             session.ended_at = datetime.utcnow()
 
+    # Close the in-process Claude SDK runtime for this project if present.
+    from app.api.chat import _agent_runtimes
+    runtime = _agent_runtimes.pop((current_user.id, project_id), None)
+    if runtime:
+        await runtime.close()
+
     # 更新项目状态
     project.agent_status = AgentStatus.STOPPED
 

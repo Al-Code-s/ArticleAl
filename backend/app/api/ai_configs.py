@@ -17,6 +17,7 @@ from app.schemas.ai_config import (
     AiConfigCreate,
     AiConfigResponse,
     AiConfigListResponse,
+    AiConfigUpdate,
     FetchModelsRequest,
     FetchModelsResponse,
     ModelInfo,
@@ -270,6 +271,26 @@ async def activate_ai_config(
         .values(is_default=False)
     )
     config.is_default = True
+    await db.commit()
+    await db.refresh(config)
+    return _to_response(config)
+
+@router.put("/{config_id}", response_model=AiConfigResponse)
+async def update_ai_config(config_id: int, data: AiConfigUpdate, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(AiConfig).where(AiConfig.id == config_id, AiConfig.user_id == current_user.id))
+    config = result.scalar_one_or_none()
+    if not config:
+        raise HTTPException(status_code=404, detail="AI config not found")
+    values = data.model_dump(exclude_unset=True)
+    for field, value in values.items():
+        if field == 'apiKey':
+            if value and value.strip():
+                config.api_key = encrypt_text(value.strip())
+        elif field == 'model': config.model_name = value
+        elif field == 'baseUrl': config.api_base_url = value
+        elif field == 'maxTokens': config.max_tokens = value
+        elif value is not None:
+            setattr(config, field, str(value) if field == 'temperature' else value)
     await db.commit()
     await db.refresh(config)
     return _to_response(config)

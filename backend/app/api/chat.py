@@ -11,6 +11,10 @@ from app.core.database import get_db
 from app.core.config import settings
 from app.models.user import User
 from app.services.chat_service import chat_service
+from app.agent_runtime import ProjectAgentService, AgentRuntimeUnavailable
+from app.services.skill_service import resolve_skill, with_context
+
+_agent_runtimes: dict[tuple[int, int], ProjectAgentService] = {}
 
 router = APIRouter()
 
@@ -121,13 +125,45 @@ async def websocket_endpoint(
 
                 # 调用 AI 服务处理消息
                 try:
-                    response = await chat_service.chat(
+                    project_id = message_data.get("project_id")
+                    runtime = _agent_runtimes.get((user_id, int(project_id))) if project_id else None
+                    if project_id and runtime is None:
+                        # Build a project-scoped SDK session lazily. If the SDK is not
+                        # installed/configured, the existing compatible provider path remains active.
+                        from sqlalchemy import select
+                        from app.models.project import Project
+                        result = await db.execute(select(Project).where(Project.id == int(project_id), Project.user_id == user_id))
+                        project = result.scalar_one_or_none()
+                        if project:
+                            skill = with_context(await resolve_skill(db, user_id, "chat"), {
+                                "项目标题": project.title, "专业": project.major,
+                                "学历层次": project.education_level, "论文类型": project.paper_type,
+                            })
+                            runtime = ProjectAgentService(int(project_id), {
+                                "project_id": project.id, "title": project.title,
+                                "major": project.major, "education_level": project.education_level,
+                                "paper_type": project.paper_type,
+                            }, skill)
+                            try:
+                                await runtime.start()
+                                _agent_runtimes[(user_id, int(project_id))] = runtime
+                            except AgentRuntimeUnavailable:
+                                runtime = None
+
+                    if runtime:
+                        chunks = []
+                        async for event in runtime.send(message_data.get("content", "")):
+                            if event.get("type") == "message" and event.get("content"):
+                                chunks.append(str(event["content"]))
+                        response = {"content": "\n".join(chunks), "timestamp": __import__("datetime").datetime.utcnow().isoformat()}
+                    else:
+                        response = await chat_service.chat(
                         user_id=user_id,
-                        project_id=message_data.get("project_id"),
+                        project_id=project_id,
                         message=message_data.get("content", ""),
                         context=message_data.get("context", {}),
                         db=db
-                    )
+                        )
 
                     # 发送 AI 回复
                     await manager.send_personal_message({

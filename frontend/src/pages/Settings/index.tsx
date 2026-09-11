@@ -48,6 +48,7 @@ const Settings = () => {
   const [agentAiForm] = Form.useForm();
   const { user, setUser } = useUserStore();
   const [activeTab, setActiveTab] = useState('profile');
+  const [editingConfig, setEditingConfig] = useState<any>(null);
 
   // 内容生成AI配置的状态
   const [contentModels, setContentModels] = useState<any[]>([]);
@@ -106,6 +107,8 @@ const Settings = () => {
       message.error(error?.response?.data?.detail || '保存失败');
     },
   });
+  const activateConfigMutation = useMutation({ mutationFn: (id: number) => apiClient.post(`/ai-configs/${id}/activate`), onSuccess: () => { message.success('默认配置已切换'); refetchAiConfig(); }, onError: () => message.error('切换默认配置失败，请重试') });
+  const updateConfigMutation = useMutation({ mutationFn: ({ id, data }: any) => apiClient.put(`/ai-configs/${id}`, data), onSuccess: () => { message.success('配置已更新'); setEditingConfig(null); refetchAiConfig(); }, onError: () => message.error('更新失败，请检查输入并重试') });
 
   // 获取模型列表
   const fetchModelsMutation = useMutation({
@@ -600,7 +603,7 @@ const Settings = () => {
                   {(aiConfigData as any)?.configs && (aiConfigData as any).configs.length > 0 && (
                     <>
                       <Divider />
-                      <h3>已保存的配置</h3>
+                      <h3>已保存的配置</h3><p>内容生成和智能体各自使用一份默认配置，切换后下次请求生效。</p>
                       <div style={{ marginTop: 16 }}>
                         {(aiConfigData as any).configs.map((config: any) => (
                           <Card
@@ -609,9 +612,9 @@ const Settings = () => {
                             style={{ marginBottom: 12 }}
                             title={config.name}
                             extra={
-                              <Tag color={config.config_type === 'content_generation' ? 'blue' : 'green'}>
+                              <Space><Button size="small" onClick={() => { setEditingConfig(config); }}>编辑</Button>{!config.is_active && <Button size="small" type="link" loading={activateConfigMutation.isPending} onClick={() => activateConfigMutation.mutate(config.id)}>设为默认</Button>}<Tag color={config.config_type === 'content_generation' ? 'blue' : 'green'}>
                                 {config.config_type === 'content_generation' ? '内容生成' : '智能体'}
-                              </Tag>
+                              </Tag></Space>
                             }
                           >
                             <Space direction="vertical" style={{ width: '100%' }}>
@@ -619,9 +622,9 @@ const Settings = () => {
                               <div>模型: {config.model}</div>
                               <div>
                                 状态: {config.is_active ? (
-                                  <Tag color="green">激活</Tag>
+                                  <Tag color="green">当前默认</Tag>
                                 ) : (
-                                  <Tag>未激活</Tag>
+                                  <Tag>备用配置</Tag>
                                 )}
                               </div>
                             </Space>
@@ -630,6 +633,7 @@ const Settings = () => {
                       </div>
                     </>
                   )}
+                  {editingConfig && <Card title="编辑配置" style={{marginTop: 16}}><Form key={editingConfig.id} layout="vertical" initialValues={{provider: editingConfig.provider, name: editingConfig.name, model: editingConfig.model, baseUrl: editingConfig.base_url, temperature: editingConfig.temperature, maxTokens: editingConfig.max_tokens}} onFinish={(v) => updateConfigMutation.mutate({id: editingConfig.id, data: v})}><Form.Item name="name" label="配置名称" rules={[{required: true, whitespace: true}]}><Input /></Form.Item><Form.Item name="provider" label="AI 提供商" rules={[{required: true}]}><Select options={PROVIDERS} /></Form.Item><Form.Item name="apiKey" label="API Key（留空保留原密钥）"><Input.Password autoComplete="new-password" /></Form.Item><Form.Item name="model" label="模型" rules={[{required: true, whitespace: true}]}><Input /></Form.Item><Form.Item name="baseUrl" label="Base URL"><Input /></Form.Item><Form.Item name="temperature" label="Temperature"><InputNumber min={0} max={2} step={0.1} /></Form.Item><Form.Item name="maxTokens" label="最大 Token"><InputNumber min={1} /></Form.Item><Button type="primary" htmlType="submit" loading={updateConfigMutation.isPending}>保存修改</Button> <Button onClick={() => setEditingConfig(null)}>取消</Button></Form></Card>}
                 </div>
               ),
             },

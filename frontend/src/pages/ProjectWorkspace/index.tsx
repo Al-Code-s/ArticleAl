@@ -22,6 +22,7 @@ import {
 } from '@ant-design/icons';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { projectApi } from '@services/api/project';
+import { documentApi, type DocumentType } from '@services/api/document';
 import { agentApi } from '@services/api/agent';
 import { useProjectStore } from '@stores/projectStore';
 import { ChatPanel } from '@components/ChatPanel';
@@ -33,6 +34,9 @@ const ProjectWorkspace = () => {
   const [activeTab, setActiveTab] = useState('outline');
   const [outlineModalVisible, setOutlineModalVisible] = useState(false);
   const [agentOpen, setAgentOpen] = useState(false);
+  const [agentRunning, setAgentRunning] = useState(false);
+  const [documentType, setDocumentType] = useState<DocumentType>('proposal');
+  const [documentModalVisible, setDocumentModalVisible] = useState(false);
 
   const currentProject = projects.find((p) => p.id === projectId);
 
@@ -56,6 +60,8 @@ const ProjectWorkspace = () => {
     queryFn: () => projectApi.getReferences(projectId!),
     enabled: !!projectId && activeTab === 'references',
   });
+  const { data: documentsData, refetch: refetchDocuments } = useQuery({ queryKey: ['documents', projectId], queryFn: () => documentApi.list({ project_id: Number(projectId) }), enabled: !!projectId && activeTab === 'documents' });
+  const generateDocumentMutation = useMutation({ mutationFn: (type: DocumentType) => documentApi.generate({ project_id: Number(projectId), document_type: type }), onSuccess: () => { message.success('文档生成成功'); refetchDocuments(); setDocumentModalVisible(false); }, onError: () => message.error('文档生成失败') });
 
   // 启动智能体
   const startAgentMutation = useMutation({
@@ -63,6 +69,7 @@ const ProjectWorkspace = () => {
     onSuccess: () => {
       message.success('智能体已启动');
       setAgentOpen(true);
+      setAgentRunning(true);
       if (projectId) {
         updateProject(projectId, { agent_status: 'running' });
       }
@@ -78,6 +85,7 @@ const ProjectWorkspace = () => {
     onSuccess: () => {
       message.success('智能体已停止');
       setAgentOpen(false);
+      setAgentRunning(false);
       if (projectId) {
         updateProject(projectId, { agent_status: 'stopped' });
       }
@@ -89,8 +97,8 @@ const ProjectWorkspace = () => {
 
   // 生成大纲
   const generateOutlineMutation = useMutation({
-    mutationFn: ({ projectId, title }: { projectId: string; title: string }) =>
-      projectApi.generateOutline(projectId, title),
+    mutationFn: ({ projectId, title, style }: { projectId: string; title: string; style: 'liberal' | 'science' }) =>
+      projectApi.generateOutline(projectId, title, style),
     onSuccess: () => {
       message.success('大纲生成成功');
       refetchOutline();
@@ -199,7 +207,7 @@ const ProjectWorkspace = () => {
         }
         extra={
           <Space>
-            {project.agent_status === 'running' ? (
+            {(project.agent_status === 'running' || agentRunning) ? (
               <Button
                 icon={<StopOutlined />}
                 onClick={() => stopAgentMutation.mutate(projectId)}
@@ -256,7 +264,7 @@ const ProjectWorkspace = () => {
                       </div>
                       <Card>
                         <pre style={{ whiteSpace: 'pre-wrap', margin: 0 }}>
-                          {JSON.stringify((outlineData as any).items[0].content, null, 2)}
+                          {formatOutline((outlineData as any).items[0].content)}
                         </pre>
                       </Card>
                     </div>
@@ -275,6 +283,9 @@ const ProjectWorkspace = () => {
                   )}
                 </div>
               ),
+            },
+            {
+              key: 'documents', label: <span><FileTextOutlined />写作材料</span>, children: <div><Space wrap>{[['assignment','任务书'],['proposal','开题报告'],['literature_review','文献综述'],['thesis','论文正文']].map(([type,label]) => <Button key={type} onClick={() => { setDocumentType(type as DocumentType); setDocumentModalVisible(true); }}>{label}</Button>)}</Space>{(documentsData as any)?.items?.map((d: any) => <Card key={d.id} title={d.title} style={{marginTop: 16}}><pre style={{whiteSpace:'pre-wrap'}}>{d.content}</pre></Card>)}</div>
             },
             {
               key: 'references',
@@ -308,7 +319,7 @@ const ProjectWorkspace = () => {
         />
       </Card>
 
-      {project.agent_status === 'running' && agentOpen && (
+      {agentOpen && (
         <div className="agent-drawer">
           <div className="agent-drawer-header">
             <b>项目智能体</b>
@@ -317,7 +328,7 @@ const ProjectWorkspace = () => {
           <ChatPanel projectId={parseInt(projectId)} />
         </div>
       )}
-      {project.agent_status === 'running' && !agentOpen && (
+      {!agentOpen && (project.agent_status === 'running' || agentRunning) && (
         <Button className="agent-expand-button" type="primary" onClick={() => setAgentOpen(true)}>
           展开智能体
         </Button>
@@ -334,17 +345,24 @@ const ProjectWorkspace = () => {
           <Button
             block
             type="primary"
-            onClick={() =>
-              generateOutlineMutation.mutate({ projectId, title: project?.title || '论文' })
-            }
+            onClick={() => generateOutlineMutation.mutate({ projectId, title: project?.title || '论文', style: 'liberal' })}
             loading={generateOutlineMutation.isPending}
           >
-            生成大纲
+            文科类型
           </Button>
+          <Button block onClick={() => generateOutlineMutation.mutate({ projectId, title: project?.title || '论文', style: 'science' })} loading={generateOutlineMutation.isPending}>理科类型</Button>
         </Space>
       </Modal>
+      <Modal title="生成写作材料" open={documentModalVisible} onCancel={() => setDocumentModalVisible(false)} onOk={() => generateDocumentMutation.mutate(documentType)} confirmLoading={generateDocumentMutation.isPending}><p>将根据当前项目大纲和参考文献生成：{documentType}</p></Modal>
     </div>
   );
 };
+
+function formatOutline(content: any): string {
+  if (!content) return '';
+  const lines: string[] = [content.title || ''];
+  const walk = (items: any[], prefix = '') => items?.forEach((s) => { lines.push(`${prefix}${s.title}`); if (s.content) lines.push(`  ${s.content}`); walk(s.subsections, `${prefix}  `); });
+  walk(content.sections); return lines.join('\n');
+}
 
 export default ProjectWorkspace;
